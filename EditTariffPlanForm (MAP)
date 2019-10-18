@@ -1,0 +1,796 @@
+using Sunkey.Framework.Core;
+using Sunkey.Framework.UI;
+using Sunkey.UI.Ext.Contol;
+using System;
+
+namespace Sunkey.UI.TTS.WebForm.Forms
+{
+    [Name("Новый тариф")]
+    public class EditTariffPlanForm : UIForm
+    {
+        
+        [Name("Строка-заголовок с названием"), FindByXPath("//li[@class='active ng-binding']")]
+        public UILabel ActiveTPBinding { get; set; }
+
+        [Name("Переход к версии МТП"), FindByXPath("//a[@ng-click='goToVersion()']")]
+        public ExtButton GoToVersionButton { get; set; }
+
+        [Name("Переход к МТП"), FindByXPath("//a[@ng-click='goToTariff()']")]
+        public ExtButton GoToTariffButton { get; set; }
+
+        [Name("Переход к странице МТП"), FindByXPath("//a[@ng-click='goToIndex()']")]
+        public ExtButton GoToMPSPageButton { get; set; }
+
+        [Name("Редактировать"), FindByXPath("//button[@id='MTPDetailEditButton']")]
+        public ExtButton EditButton { get; set; }
+
+        [Name("Сохранить"), FindByXPath("//button[@id='MTPDetailSaveButton']")]
+        public ExtButton SaveButton { get; set; }
+
+        [Name("Менеджеры тарифа"), FindByXPath("//div[@class='form-control-static ng-scope']")]
+        public UILabel MTPManagerLabel { get; set; }
+
+        [Name("Отменить"), FindByXPath("//button[@id='MTPDetailCancelButton']")]
+        public ExtButton CancelButton { get; set; }
+
+        [Name("Запуск новой версии"), FindByXPath("//button[@id='MTPDetailNewVersionButton']")]
+        public ExtButton CreateNewVersionButton { get; set; }
+
+        [Name("Вкладка 'Общие сведения'"), FindByXPath("//a[text()='Общие сведения']")]
+        public ExtButton CommonTabButton { get; set; }
+
+        [Name("Вкладка 'Параметры тарифа'"), FindByXPath("//a[text()='Параметры тарифа']")]
+        public ExtButton ParametersTabButton { get; set; }
+
+        [Name("Вкладка 'Управление тарифом'"), FindByXPath("//a[text()='Управление тарифом']")]
+        public ExtButton TariffManagementTabButton { get; set; }
+
+        [Name("Вкладка 'Версии'"), FindByXPath("//a[text()='Версии']")]
+        public ExtButton VersionTabButton { get; set; }
+
+        [Name("Вкладка 'Регионы'"), FindByXPath("//a[text()='Регионы']")]
+        public ExtButton RegionsTabButton { get; set; }
+
+        [Name("Предупреждение"), FindByXPath("//div[@class='tab-pane ng-scope active']//div[@class='alert alert-danger ng-scope']"), ItemByXPath("//div[@class='alert alert-danger ng-scope'][1]")]
+        public UIList<UILabel> WarningLabel { get; set; }
+
+            public UIAlert Alert { get; set; }
+        [Name("Блок полей 'Общие сведения'")]
+        public CommonInfoTabBlock CommonInfoTab { get; set; }
+        public partial class CommonInfoTabBlock : UIComponent
+        {
+
+            [Name("Выберите линейку ТП"), FindByXPath("//div[@id='RangeTariffPlan']/a")]
+            public ExtButton TariffLineButton { get; set; }
+
+            [Name("Линейка ТП"), FindByXPath("//p[@id='MTPDetailFormRangeNameText']")]
+            public UILabel TariffLineLabel { get; set; }
+
+            [Name("GlobalCode"), FindByXPath("//input[@id='GlobalCode']")]
+            public UIEdit<string> GlobalCodeEdit { get; set; }
+
+            [Name("GlobalCode"), FindByXPath("//p[@id='MTPDetailFormGCText']")]
+            public UILabel GlobalCode { get; set; }
+
+            [Name("Наименование"), FindByXPath("//input[@id='MTPDetailFormName']")]
+            public UIEdit<string> TariffName { get; set; }
+
+            [Name("Наименование"), FindByXPath("//p[@id='MTPDetailFormNameText']")]
+            public UILabel TariffNameLabel { get; set; }
+
+            [Name("IVR - код ТП"), FindByXPath("//input[@id='MTPDetailFormIVRCode']")]
+            public UIEdit<string> IVRCodeTPName { get; set; }
+
+        }
+
+        [Name("Блок полей 'Параметры тарифа'"), FindById("TariffParamsPage")]
+        public ParametersTabBlock ParametersTab { get; set; }
+        public partial class ParametersTabBlock : UIControl
+        {
+            [Name("Тип номера"), FindByXPath("//edit-enum[@id='TariffParamsNumberType']//select")]
+            public UISelectBox NumberTypeSelectBox { get; set; }
+
+            [Name("Тип номера"), FindByXPath("//p[@id='TariffParamsNumberTypeText']")]
+            public UILabel NumberTypeLabel { get; set; }
+
+            [Name("Выберите линейку ТП"), FindByXPath("//a[@id='MTPDetailFormSetRange']")]
+            public ExtButton TariffLineButton { get; set; }
+
+            [Name("Первоначальный баланс"), FindByXPath("//input[@id='TariffParamsBalance']")]
+            public UIEdit<string> TariffBalance { get; set; }
+
+            [Name("Первоначальный баланс"), FindByXPath("//p[@id='TariffParamsBalanceText']")]
+            public UILabel TariffBalanceLabel { get; set; }
+
+            [Name("Способ подключения"), FindByXPath("//edit-flag[@id='TariffParamsConnMethod']//div")]
+            public UISelectBox ConnMethodSelectBox { get; set; }
+
+            [Name("Способ подключения"), FindByXPath("//p[@id='TariffParamsConnMethodText']")]
+            public UILabel ConnMethodLabel { get; set; }
+
+            [Name("Базовые сервисы"), FindByXPath("//edit-flag[@id='TariffParamsBaseSrv']//div")]
+            public UISelectBox BaseServicesSelectBox { get; set; }
+
+            [Name("Базовые сервисы"), FindByXPath("//p[@id='TariffParamsBaseSrvText']")]
+            public UILabel BaseServicesLabel { get; set; }
+
+            [Name("Метод расчета"), FindByXPath("//edit-enum[@id='TariffParamsCalcMethod']//select")]
+            public UISelectBox CalcMethodSelectBox { get; set; }
+
+            [Name("Метод расчета"), FindByXPath("//p[@id='TariffParamsCalcMethodText']")]
+            public UILabel CalcMethodLabel { get; set; }
+
+            [Name("Первоначальный платеж"), FindByXPath("//input[@id='TariffParamsInitPayment']")]
+            public UIEdit<string> InitPayment { get; set; }
+
+            [Name("Первоначальный платеж"), FindByXPath("//p[@id='TariffParamsInitPaymentText']")]
+            public UILabel InitPaymentLabel { get; set; }
+
+            [Name("Сегмент"), FindByXPath("//edit-enum[@id='TariffParamsSegment']//select")]
+            public UISelectBox SegmentSelectBox { get; set; }
+
+            [Name("Сегмент"), FindByXPath("//p[@id='TariffParamsSegmentText']")]
+            public UILabel SegmentLabel { get; set; }
+
+            [Name("Биллинговый период"), FindByXPath("//edit-enum[@id='TariffParamsBillingPeriod']//select")]
+            public UISelectBox BillingPeriodSelectBox { get; set; }
+
+            [Name("Биллинговый период"), FindByXPath("//p[@id='TariffParamsBillingPeriodText']")]
+            public UILabel BillingPeriodLabel { get; set; }
+
+            [Name("Категория надежности/Категория доверия"), FindByXPath("//div[@id='TariffParamsTustCategory']")]
+            public UISelectBox TrustCategorySelectBox { get; set; }
+
+            [Name("Категория надежности / Категория доверия"), FindByXPath("//p[@id='TariffParamsTrustText']")]
+            public UILabel TrustCategoryLabel { get; set; }
+
+            [Name("Биллинговая группа"), FindByXPath("//div[@id='TariffParamsBillingGroup']")]
+            public UISelectBox BillingGroupSelectBox { get; set; }
+
+            [Name("Биллинговая группа"), FindByXPath("//p[@id='TariffParamsBillingGroupText']")]
+            public UILabel BillingGroupLabel { get; set; }
+
+            [Name("Маркетинговая категория"), FindByXPath("//div[@id='TariffParamsMarketingCategory']")]
+            public UISelectBox MarketingCategorySelectBox { get; set; }
+
+            [Name("Маркетинговая категория"), FindByXPath("//p[@id='TariffParamsMarketingCatText']")]
+            public UILabel MarketingCategoryLabel { get; set; }
+
+            [Name("Платформа"), FindByXPath("//edit-enum[@id='TariffParamsBalanceStorage']//select")]
+            public UISelectBox BalanceStorageSelectBox { get; set; }
+
+            [Name("Платформа"), FindByXPath("//p[@id='TariffParamsBalanceStorageText']")]
+            public UILabel BalanceStorageLabel { get; set; }
+
+            [Name("Порог информирования"), FindByXPath("//input[@id='TariffParamsWarnLimit']")]
+            public UIEdit<string> WarnLimit { get; set; }
+
+            [Name("Порог информирования"), FindByXPath("//p[@id='TariffParamsWarnLimitText']")]
+            public UILabel WarnLimitLabel { get; set; }
+
+            [Name("Порог ARPU"), FindByXPath("//input[@id='TariffParamsArpu']")]
+            public UIEdit<string> ArpuLimit { get; set; }
+
+            [Name("Порог ARPU"), FindByXPath("//p[@id='TariffParamsArpuText']")]
+            public UILabel ArpuLimitLabel { get; set; }
+
+            [Name("Порог 'Первоначальная блокировка PAY'"), FindByXPath("//input[@id='TariffParamsActivationBalance']")]
+            public UIEdit<string> ActivationBalanceLimit { get; set; }
+
+            [Name("Порог 'Первоначальная блокировка PAY'"), FindByXPath("//p[@id='TariffParamsActivationBalanceText']")]
+            public UILabel ActivationBalanceLimitLabel { get; set; }
+
+            [Name("Льготный порог 'Первоначальная блокировка PAY'"), FindByXPath("//input[@id='TariffParamsPreferBalance']")]
+            public UIEdit<string> PreferBalanceLimit { get; set; }
+
+            [Name("Льготный порог 'Первоначальная блокировка PAY'"), FindByXPath("//p[@id='TariffParamsPreferBalanceText']")]
+            public UILabel PreferBalanceLimitLabel { get; set; }
+
+            [Name("Уровень PAM на период тестирования"), FindByXPath("//edit-enum[@id='TariffParamsTestPam']//select")]
+            public UISelectBox TestPamSelectBox { get; set; }
+
+            [Name("Уровень PAM с даты запуска"), FindByXPath("//edit-enum[@id='TariffParamsProdPam']//select")]
+            public UISelectBox ProdPamSelectBox { get; set; }
+
+            [Name("Группа ТП"), FindByXPath("//edit-enum[@id='TariffParamsMtpGroup']//select")]
+            public UISelectBox TariffGroupSelectBox { get; set; }
+
+            [Name("Информирование 'Визитка'"), FindByXPath("//edit-enum[@enums='Enums.TPEBusinessCardUsing']//select")]
+            public UISelectBox BusinessCardUsingSelectBox { get; set; }
+
+            [Name("Группа ТП для 'Визитки'"), FindByXPath("//edit-enum[@enums='Enums.TPEBusinessCardTpGroup']//select")]
+            public UISelectBox BusinessCardTPGroupSelectBox { get; set; }
+
+            [Name("Дополнительные настройки для 'Визитки'"), FindByXPath("//input[@id='TariffParamsBusinessCardAdditionalSettings']")]
+            public UIEdit<string> BusinessCardAdditionalEdit { get; set; }
+
+        }
+
+        [Name("Блок полей 'Управление тарифом'")]
+        public TariffManagementBlock TariffManagement { get; set; }
+        public class TariffManagementBlock : UIComponent
+        {
+            [Name("Добавление нового канала управления"), FindByXPath("//div[@id='TariffChannelsPage']//button[@class='btn btn-primary']")]
+            public ExtButton AddChanelButton { get; set; }
+
+            [Name("Источник обращения"), FindByXPath("//div[@id='ChannelSelectDropDown']")]
+            public UISelectBox ChannelSelectBox { get; set; }
+
+            [Name("OK"), FindByXPath("//button[@id='ChannelSelectOkButton']")]
+            public ExtButton AddChanelOKButton { get; set; }
+
+            [Name("Источники обращения"), FindByXPath("//div[@id='TariffChannelsPage']//table")]
+            [HeaderByXPath("./thead/tr[th]")]
+            [HeaderCellByXPath("./th")]
+            [RowByXPath("./tbody/tr[td]")]
+            public UITable<ChannelActionDataRow> ChannelActionTable { get; set; }
+
+            [Name("Источники обращения"), RowCellByXPath("./td")]
+            public class ChannelActionDataRow : UITableRow
+            {
+                [Name("Источник обращения"), Column(0)]
+                public UILabel Source { get; set; }
+
+                [FindByXPath(".//select"), Column(1)] //
+                public UISelectBox ChannelActionSelectBox1 { get; set; }
+
+                [FindByXPath(".//select"), Column(4)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                public UISelectBox ChannelActionSelectBox2 { get; set; }
+
+                [FindByXPath(".//select"), Column(7)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                public UISelectBox ChannelActionSelectBox3 { get; set; }
+
+                [FindByXPath(".//edit-enum[@enums='Enums.TPEChannelAction']//select"), Column(8)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                public UISelectBox ChannelActionSelectBox4 { get; set; }
+
+                [Name("Поиск"), Column(3)]
+                public UILabel SearchString { get; set; }
+
+            }
+
+
+        }
+
+        [Name("Блок полей 'Линейка тарифа'")]
+        public TariffLineBlock TariffLine { get; set; }
+        public class TariffLineBlock : UIComponent
+        {
+
+            [Name("Smart"), FindByXPath("//td[@class='ng-scope ng-binding tree-dnd-handle v-middle' and contains(., 'Smart')]")] ////td[@class='ng-scope ng-binding tree-dnd-handle v-middle' and contains(text(), 'Smart')]
+            public ExtButton Smart { get; set; }
+
+            [Name("Супер МТС"), FindByXPath("//td[@class='ng-scope ng-binding tree-dnd-handle v-middle' and contains(., 'Супер МТС')]")]
+            public ExtButton SuperMTS { get; set; }
+
+            [Name("Применить"), FindByXPath("//div[@class='modal-dialog']//button[@class='btn btn-primary']")]
+            public ExtButton ConfirmButton { get; set; }
+
+            [Name("Отменить"), FindByXPath("//button[@class='btn btn-warning']")]
+            public ExtButton CancelButton { get; set; }
+
+        }
+
+        [Name("Блок полей 'Версия МТП'")]
+        public MTPVersionBlock MTPVersion { get; set; }
+        public class MTPVersionBlock : UIComponent
+        {
+            [Name("Строка-заголовок с названием страницы"), FindByXPath("//li[@id='MTPVDetailPageBCMTP']//a")]
+            public ExtButton MTPVDetailPage { get; set; }
+
+            [Name("Строка-заголовок с названием тарифа"), FindByXPath("//li[@id='MTPVDetailPageBCTariff']//a")]
+            public ExtButton MTPVDetailPageBCTariff { get; set; }
+
+            [Name("Строка-заголовок с названием версии тарифа"), FindByXPath("//li[@id='MTPVDetailPageBCVersionName']")]
+            public UILabel MTPVDetailPageBCVersionName { get; set; }
+
+            [Name("Редактировать"), FindByXPath("//button[@id='MTPVDetailEditButton']")]
+            public ExtButton EditVersionButton { get; set; }
+
+
+
+            [Name("Источники обращения"), FindByXPath("//session[@id='MTPVDetailSession']//table")]
+            [RowByXPath(".//tbody/tr")]
+            public UITable<MTPVDetailDataRow> MTPVDetailTable { get; set; }
+
+            [Name("Источники обращения"), RowCellByXPath(".//td")]
+            public class MTPVDetailDataRow : UITableRow
+            {
+                [Name("Дата утверждения"), FindByXPath(".//p"), Column(1)] //
+                public UILabel ApprovalDate { get; set; }
+
+                [Name("Приказ"), FindByXPath(".//p"), Column(3)] //
+                public UILabel OrderName { get; set; }
+
+                [Name("Инициатор"), FindByXPath(".//p"), Column(5)] //
+                public UILabel InitiatorName { get; set; }
+            }
+
+            [Name("Название"), FindByXPath("//p[@id='MTPVDetailNameText']")]
+            public UILabel VersionName { get; set; }
+
+            [Name("Номер версии"), FindByXPath("//input[@id='MTPVDetailVersionNumber']")]
+            public UIEdit<string> VersionNumber { get; set; }
+
+            [Name("Сохранить"), FindByXPath("//button[@id='MTPVDetailSaveButton']")]
+            public ExtButton SaveButton { get; set; }
+
+            [Name("Отменить"), FindByXPath("//button[@id='MTPVDetailCancelButton']")]
+            public ExtButton CancelButton { get; set; }
+
+            [Name("Добавить регион"), FindByXPath("//button[@id='MTPVDetailAddRegionButton']")]
+            public ExtButton AddRegionButton { get; set; }
+
+            [Name("Блок полей 'Версии'")]
+            public AddRegionTabBlock AddRegionTab { get; set; }
+            public class AddRegionTabBlock : UIComponent
+            {
+
+                [Name("Название"), FindByXPath("//input[@id='MTPVDetailName']")]
+                public UIEdit<string> MTPVDetailName { get; set; }
+
+                [Name("IVR - код закрытия ТП"), FindByXPath("//input[@id='MTPVDetailIVRCodeClose']")]
+                public UIEdit<string> IVRCodeClose { get; set; }
+
+
+                [Name("Регион"), FindByXPath("//div[@id='MTPVAddRtpModalRegionFilter']")]
+                public UISelectBox RegionSelectBox { get; set; }
+
+                [Name("Статус продаж"), FindByXPath("//div//select[@id='MTPVAddRtpModalSaleStatus']")]
+                public UISelectBox SaleStatusSelectBox { get; set; }
+
+                [Name("Статус целевого ТП"), FindByXPath("//edit-enum[@id='MTPVAddRtpModalStatus']//select")]
+                public UISelectBox StatusTPSelectBox { get; set; }
+
+                [Name("OK"), FindByXPath("//button[@id='MTPVAddRtpModalOkButton']")]
+                public ExtButton OKButton { get; set; }
+
+                [Name("Источники обращения"), FindByXPath("//table[@id='MTPDetailVersionTable']")]
+                [HeaderByXPath("./tbody/tr[th]")]
+                [HeaderCellByXPath("./th")]
+                [RowByXPath("./tbody/tr[td]")]
+                public UITable<VersionsDataRow> VersionsTable { get; set; }
+
+                [Name("Источники обращения"), RowCellByXPath(".//td")]
+                public class VersionsDataRow : UITableRow
+                {
+                    [NamedColumn("Номер")]//, Column(1)] //
+                    public UILabel Number { get; set; }
+
+                    [NamedColumn("Наименование")]//, Column(1)] //
+                    public UILabel Name { get; set; }
+
+                    [Name("Выгрузить прайс-лист"), Column(6), FindByXPath("./div[@class='btn-group']/a")]
+                    public ExtButton DownloadMenuButton { get; set; }
+
+                    [Name("Выгрузить прайс-лист"), Column(6), FindByXPath("./div[@class='btn-group show']//a[@ng-click='downloadTPverParameters(ver.id)']")]
+                    public ExtButton DownloadITParamsButton { get; set; }
+
+                }
+
+            }
+            [Name("Выгрузить прайс-лист"), Column(6), FindByXPath("//table[@id='MTPVDetailRtpTable']//div[@class='btn-group']/a")]
+            public ExtButton MTPVDownloadMenuButton { get; set; }
+
+            [Name("Выгрузить прайс-лист"), FindByXPath("//table[@id='MTPVDetailRtpTable']//div[@class='btn-group show']//a[@ng-click='downloadTPverParameters()']")]
+            public ExtButton MTPVDownloadITParamsButton { get; set; }
+
+
+            [Name("РТП"), FindByXPath("//table[@id='MTPVDetailRtpTable']")]
+            [HeaderByXPath("./tbody/tr[th]")]
+            [HeaderCellByXPath("./th")]
+            [RowByXPath("./tbody/tr[@ng-repeat='rtp in filterRegionTariffPlans()']")]
+            public UITable<RTPTableDataRow> RTPTable { get; set; }
+
+            [Name("Источники обращения"), RowCellByXPath("./td")]
+            public class RTPTableDataRow : UITableRow
+            {
+                [NamedColumn("Global Code РТП"), Column(0)] //
+                public UILabel RTPGlobalCode { get; set; }
+
+                [NamedColumn("Наименование"), FindByXPath("./a")] //
+                public ExtButton Name { get; set; }
+
+                [NamedColumn("Прайс-лист"), FindByXPath("./button")] //
+                public ExtButton PriceList { get; set; }
+
+                [Column(8), FindByXPath("./div/input[@ng-model='rtp.checked']")] //
+                public UICheckBox CheckBox { get; set; }
+            }
+
+            [Name("РТП"), FindByXPath("//table[@id='MTPVDetailRtpTable']")]
+            [HeaderByXPath("./tbody/tr[th]")]
+            [HeaderCellByXPath("./th")]
+            [RowByXPath("./tbody/tr[td[@class='filter']]")]
+            public UITable<RTPTableFilterDataRow> RTPTableFilter { get; set; }
+
+            [Name("Фильтры"), RowCellByXPath("./td")]
+            public class RTPTableFilterDataRow : UITableRow
+            {
+                [NamedColumn("Статус тарифа"), FindById("MTPVDetailStatusFilter")] //
+                public UISelectBox TPStatus { get; set; }
+
+                [NamedColumn("Статус продажи"), FindById("MTPVDetailSaleStatusFilter")] //
+                public UISelectBox SaleStatus { get; set; }
+
+                
+            }
+
+
+        }
+
+        [Name("Блок полей 'Версии'")]
+        public VersionInfoTabBlock VersionInfoTab { get; set; }
+        public class VersionInfoTabBlock : UIComponent
+        {
+
+            [Name("Источники обращения"), FindByXPath("//table[@id='MTPDetailVersionTable']")]
+            [HeaderByXPath("./tbody/tr[th]")]
+            [HeaderCellByXPath("./th")]
+            [RowByXPath("./tbody/tr[td]")]
+            public UITable<VersionsDataRow> VersionsTable { get; set; }
+
+            [Name("Источники обращения"), RowCellByXPath("./td")]
+            public class VersionsDataRow : UITableRow
+            {
+                [NamedColumn("Номер")]//, Column(1)] //
+                public UILabel Number { get; set; }
+
+                [NamedColumn("Наименование")]//, Column(1)] //
+                public ExtButton Name { get; set; }
+
+                [Name("Выгрузить прайс-лист"), FindByXPath(".//span[@class='glyphicon glyphicon-ruble']")]
+                public ExtButton GetPriceButton { get; set; }
+
+                [Name("Прайс-лист для куратора"), FindByXPath(".//div[@class='btn-group show']//ul[@class='dropdown-menu show']//a[@ng-click='downloadPriceForCurator(ver.id)']")]
+                public ExtButton PriceForCuratorButton { get; set; }
+
+                [Name("Прайс-лист для сайта"), FindByXPath(".//div[@class='btn-group show']//ul[@class='dropdown-menu show']//a[@ng-click='downloadPriceForSite(ver.id)']")]
+                public ExtButton PriceForSiteButton { get; set; }
+
+                [Name("Параметры ТП по email"), FindByXPath(".//div[@class='btn-group show']//ul[@class='dropdown-menu show']//a[@ng-click='downloadTPverParameters(ver.id))']")]
+                public ExtButton TPverParametersButton { get; set; }
+
+            }
+
+        }
+
+        [Name("Блок полей 'Версии'"), FindByXPath("//div[@id='ChangeTariffNameModal']")]
+        public ChangeTariffNameModal ChangeTariffName { get; set; }
+        public class ChangeTariffNameModal : UIComponent
+        {
+            [Name("Режим изменения названия ТП"), FindByXPath(".//div[@id='ChangeTariffNameMode'][a]")]
+            public UISelectBox ChangeTariffNameModeSelectBox { get; set; }
+
+            [Name("OK"), FindByXPath(".//button[@id='ChangeTariffNameModalOkButton']")]
+            public ExtButton OKButton { get; set; }
+
+        }
+
+        [Name("Блок полей 'Регионы'")]
+        public RegionsBlock Regions { get; set; }
+        public class RegionsBlock : UIComponent
+        {
+            [Name("РТП"), FindByXPath("//table[@id='MTPDetailRtpTable']")]
+            [HeaderByXPath("./tbody/tr[th]")]
+            [HeaderCellByXPath("./th")]
+            [RowByXPath("./tbody/tr[@ng-repeat='rtp in getRegionalTariffPlans()']")]
+            public UITable<RegionsDataRow> RegionsTable { get; set; }
+
+            [Name("Источники обращения"), RowCellByXPath("./td")]
+            public class RegionsDataRow : UITableRow
+            {
+                [NamedColumn("Global Code РТП"), Column(0)] //
+                public UILabel RTPGlobalCode { get; set; }
+
+                [NamedColumn("Наименование"), Column(3), FindByXPath("./a")] //
+                public ExtButton Name { get; set; }
+
+                [NamedColumn("Прайс-лист"), Column(7), FindByXPath("./button")] //
+                public ExtButton PriceList { get; set; }
+            }
+
+        }
+
+        [Name("Блок полей 'РТП'")]
+        public RTPCardBlock RTPCard { get; set; }
+        public class RTPCardBlock : UIComponent
+        {
+            [Name("Редактировать"), FindByXPath("//button[@id='RTPDetailEditButton']")]
+            public ExtButton EditButton { get; set; }
+
+            [Name("Сохранить"), FindByXPath("//button[@id='RTPDetailSaveButton']")]
+            public ExtButton SaveButton { get; set; }
+
+            [Name("Отменить"), FindByXPath("//button[@id='RTPDetailCancelButton']")]
+            public ExtButton CancelButton { get; set; }
+
+            [Name("Прайслист"), FindByXPath("//button[@id='RTPDetailPriceListButton']")]
+            public ExtButton PriceListButton { get; set; }
+
+            [Name("Блок полей вкладки"), FindByXPath("//form[@id='RTPDetailForm']//ul[@class='nav nav-tabs']")]
+            public NavTabsBlock NavTabs { get; set; }
+            public class NavTabsBlock : UIControl//UIComponent
+            {
+                [Name("Общие сведения"), FindByXPath("./li[@id='RTPDetailFormTabCommon']/a")]
+                public ExtButton CommonTabButton { get; set; }
+
+                [Name("Параметры тарифа"), FindByXPath("./li[@id='RTPDetailFormTabParameters']/a")]
+                public ExtButton ParametersTabButton { get; set; }
+
+                [Name("Управление тарифом"), FindByXPath("./li[@id='MTPDetailTariffManagement']/a")]
+                public ExtButton ManagementTabButton { get; set; }
+            }
+
+
+            [Name("Блок полей 'Общие сведения'")]
+            public CommonTabBlock CommonTab { get; set; }
+            public class CommonTabBlock : UIComponent
+            {
+                [Name("Статус продаваемости"), FindByXPath("//input[@id='RTPDetailFormTabCommonSaleStatus']")]
+                public UICheckBox SaleStatusCheckBox { get; set; }
+            }
+
+            [Name("Блок полей 'Параметры тарифа'"), FindById("TariffParamsPage")]
+            public ParametersTabBlock ParametersTab { get; set; }
+            public partial class ParametersTabBlock : UIControl
+            {
+                [Name("Тип номера"), FindByXPath("//edit-enum[@id='TariffParamsNumberType']//select")]
+                public UISelectBox NumberTypeSelectBox { get; set; }
+
+                [Name("Тип номера"), FindByXPath("//p[@id='TariffParamsNumberTypeText']")]
+                public UILabel NumberTypeLabel { get; set; }
+
+                [Name("Выберите линейку ТП"), FindByXPath("//a[@id='MTPDetailFormSetRange']")]
+                public ExtButton TariffLineButton { get; set; }
+
+                [Name("Первоначальный баланс"), FindByXPath("//input[@id='TariffParamsBalance']")]
+                public UIEdit<string> TariffBalance { get; set; }
+
+                [Name("Первоначальный баланс"), FindByXPath("//p[@id='TariffParamsBalanceText']")]
+                public UILabel TariffBalanceLabel { get; set; }
+
+                [Name("Способ подключения"), FindByXPath("//edit-flag[@id='TariffParamsConnMethod']//div")]
+                public UISelectBox ConnMethodSelectBox { get; set; }
+
+                [Name("Способ подключения"), FindByXPath("//p[@id='TariffParamsConnMethodText']")]
+                public UILabel ConnMethodLabel { get; set; }
+
+                [Name("Базовые сервисы"), FindByXPath("//edit-flag[@id='TariffParamsBaseSrv']//div")]
+                public UISelectBox BaseServicesSelectBox { get; set; }
+
+                [Name("Базовые сервисы"), FindByXPath("//p[@id='TariffParamsBaseSrvText']")]
+                public UILabel BaseServicesLabel { get; set; }
+
+                [Name("Метод расчета"), FindByXPath("//edit-enum[@id='TariffParamsCalcMethod']//select")]
+                public UISelectBox CalcMethodSelectBox { get; set; }
+
+                [Name("Метод расчета"), FindByXPath("//p[@id='TariffParamsCalcMethodText']")]
+                public UILabel CalcMethodLabel { get; set; }
+
+                [Name("Первоначальный платеж"), FindByXPath("//input[@id='TariffParamsInitPayment']")]
+                public UIEdit<string> InitPayment { get; set; }
+
+                [Name("Первоначальный платеж"), FindByXPath("//p[@id='TariffParamsInitPaymentText']")]
+                public UILabel InitPaymentLabel { get; set; }
+
+                [Name("Сегмент"), FindByXPath("//edit-enum[@id='TariffParamsSegment']//select")]
+                public UISelectBox SegmentSelectBox { get; set; }
+
+                [Name("Сегмент"), FindByXPath("//p[@id='TariffParamsSegmentText']")]
+                public UILabel SegmentLabel { get; set; }
+
+                [Name("Биллинговый период"), FindByXPath("//edit-enum[@id='TariffParamsBillingPeriod']//select")]
+                public UISelectBox BillingPeriodSelectBox { get; set; }
+
+                [Name("Биллинговый период"), FindByXPath("//p[@id='TariffParamsBillingPeriodText']")]
+                public UILabel BillingPeriodLabel { get; set; }
+
+                [Name("Категория надежности/Категория доверия"), FindByXPath("//div[@id='TariffParamsTustCategory']")]
+                public UISelectBox TrustCategorySelectBox { get; set; }
+
+                [Name("Категория надежности / Категория доверия"), FindByXPath("//p[@id='TariffParamsTrustText']")]
+                public UILabel TrustCategoryLabel { get; set; }
+
+                [Name("Биллинговая группа"), FindByXPath("//div[@id='TariffParamsBillingGroup']")]
+                public UISelectBox BillingGroupSelectBox { get; set; }
+
+                [Name("Биллинговая группа"), FindByXPath("//p[@id='TariffParamsBillingGroupText']")]
+                public UILabel BillingGroupLabel { get; set; }
+
+                [Name("Маркетинговая категория"), FindByXPath("//div[@id='TariffParamsMarketingCategory']")]
+                public UISelectBox MarketingCategorySelectBox { get; set; }
+
+                [Name("Маркетинговая категория"), FindByXPath("//p[@id='TariffParamsMarketingCatText']")]
+                public UILabel MarketingCategoryLabel { get; set; }
+
+                [Name("Платформа"), FindByXPath("//edit-enum[@id='TariffParamsBalanceStorage']//select")]
+                public UISelectBox BalanceStorageSelectBox { get; set; }
+
+                [Name("Платформа"), FindByXPath("//p[@id='TariffParamsBalanceStorageText']")]
+                public UILabel BalanceStorageLabel { get; set; }
+
+                [Name("Порог информирования"), FindByXPath("//input[@id='TariffParamsWarnLimit']")]
+                public UIEdit<string> WarnLimit { get; set; }
+
+                [Name("Порог информирования"), FindByXPath("//p[@id='TariffParamsWarnLimitText']")]
+                public UILabel WarnLimitLabel { get; set; }
+
+                [Name("Порог ARPU"), FindByXPath("//input[@id='TariffParamsArpu']")]
+                public UIEdit<string> ArpuLimit { get; set; }
+
+                [Name("Порог ARPU"), FindByXPath("//p[@id='TariffParamsArpuText']")]
+                public UILabel ArpuLimitLabel { get; set; }
+
+                [Name("Порог 'Первоначальная блокировка PAY'"), FindByXPath("//input[@id='TariffParamsActivationBalance']")]
+                public UIEdit<string> ActivationBalanceLimit { get; set; }
+
+                [Name("Порог 'Первоначальная блокировка PAY'"), FindByXPath("//p[@id='TariffParamsActivationBalanceText']")]
+                public UILabel ActivationBalanceLimitLabel { get; set; }
+
+                [Name("Льготный порог 'Первоначальная блокировка PAY'"), FindByXPath("//input[@id='TariffParamsPreferBalance']")]
+                public UIEdit<string> PreferBalanceLimit { get; set; }
+
+                [Name("Льготный порог 'Первоначальная блокировка PAY'"), FindByXPath("//p[@id='TariffParamsPreferBalanceText']")]
+                public UILabel PreferBalanceLimitLabel { get; set; }
+
+                [Name("Уровень PAM на период тестирования"), FindByXPath("//edit-enum[@id='TariffParamsTestPam']//select")]
+                public UISelectBox TestPamSelectBox { get; set; }
+
+                [Name("Уровень PAM с даты запуска"), FindByXPath("//edit-enum[@id='TariffParamsProdPam']//select")]
+                public UISelectBox ProdPamSelectBox { get; set; }
+
+                [Name("Группа ТП"), FindByXPath("//edit-enum[@id='TariffParamsMtpGroup']//select")]
+                public UISelectBox TariffGroupSelectBox { get; set; }
+
+                [Name("Информирование 'Визитка'"), FindByXPath("//edit-enum[@enums='Enums.TPEBusinessCardUsing']//select")]
+                public UISelectBox BusinessCardUsingSelectBox { get; set; }
+
+                [Name("Группа ТП для 'Визитки'"), FindByXPath("//edit-enum[@enums='Enums.TPEBusinessCardTpGroup']//select")]
+                public UISelectBox BusinessCardTPGroupSelectBox { get; set; }
+
+            }
+
+            [Name("Блок полей 'Управление тарифом'")]
+            public ManagementTabBlock ManagementTab { get; set; }
+            public class ManagementTabBlock : UIComponent
+            {
+                [Name("Добавление нового канала управления"), FindByXPath("//div[@id='TariffChannelsPage']//button[@class='btn btn-primary']")]
+                public ExtButton AddChanelButton { get; set; }
+
+                [Name("Источник обращения"), FindByXPath("//div[@id='ChannelSelectDropDown']")]
+                public UISelectBox ChannelSelectBox { get; set; }
+
+                [Name("OK"), FindByXPath("//button[@id='ChannelSelectOkButton']")]
+                public ExtButton AddChanelOKButton { get; set; }
+
+                [Name("Источники обращения"), FindByXPath("//div[@id='TariffChannelsPage']//table")]
+                [HeaderByXPath("./thead/tr[th]")]
+                [HeaderCellByXPath("./th")]
+                [RowByXPath("./tbody/tr[td]")]
+                public UITable<ChannelActionDataRow> ChannelActionTable { get; set; }
+
+                [Name("Источники обращения"), RowCellByXPath("./td")]
+                public class ChannelActionDataRow : UITableRow
+                {
+                    [Name("Источник обращения"), Column(0)]
+                    public UILabel Source { get; set; }
+
+                    [FindByXPath(".//select"), Column(1)] //
+                    public UISelectBox ChannelActionSelectBox1 { get; set; }
+
+                    [FindByXPath(".//select"), Column(4)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                    public UISelectBox ChannelActionSelectBox2 { get; set; }
+
+                    [FindByXPath(".//select"), Column(7)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                    public UISelectBox ChannelActionSelectBox3 { get; set; }
+
+                    [FindByXPath(".//edit-enum[@enums='Enums.TPEChannelAction']//select"), Column(8)] //FindByXPath("//edit-enum[@enums='Enums.TPEChannelAction']//select")
+                    public UISelectBox ChannelActionSelectBox4 { get; set; }
+
+                    [Name("Поиск"), Column(3)]
+                    public UILabel SearchString { get; set; }
+
+                }
+
+
+            }
+
+            [Name("Блок полей 'Прайс-лист РТП'")]
+            public RTPPriceListBlock RTPPriceList { get; set; }
+            public class RTPPriceListBlock : UIComponent
+            {
+                [Name("Добавить"), FindByXPath("//button[@id='RtpPricelistAddNodeButton']")]
+                public ExtButton AddPriceButton { get; set; }
+
+                [Name("Расширенный фильтр"), FindByXPath("//button[@id='RtpPricelistToggleFilterButton']")]
+                public ExtButton ExtendedFilterButton { get; set; }
+
+                [Name("Название услуги"), FindByXPath("//input[@id='RtpPricelistXTextFilter']")]
+                public UIEdit<string> ExtendedFilterEdit { get; set; }
+
+                [Name("Отображаемые на ПЛ для куратора ТП"), FindByXPath("//input[@id='RtpPricelistShownFilter']")]
+                public UICheckBox ExtendedFilterShownCheckBox { get; set; }
+
+                [Name("Применить"), FindByXPath("//button[@id='RtpPricelistFilterApplyButton']")]
+                public ExtButton ExtendedFilterApplyButton { get; set; }
+
+                [Name("Показать спец.цены"), FindByXPath("//div[a[@ng-click='toggleShowSpecPrice(section, null)']]")]
+                public ExtButton ShowSpecialPricesButton { get; set; }
+
+                [Name("Услуги РТП"), FindByXPath("//table[@id='PricelistTable']")]
+                [HeaderByXPath("./tbody/tr[th][2]")]
+                [HeaderCellByXPath("./th")]
+                [RowByXPath("./tbody/tr[td]")]
+                public UITable<PriceListDataRow> PriceListTable { get; set; }
+
+                [Name("Прайс-лист"), RowCellByXPath("./td")]
+                public class PriceListDataRow : UITableRow
+                {
+                    [Name("Панель с кнопками"), Column(0), ItemByXPath("./button")] //
+                    public UIList<ExtButton> Buttons { get; set; }
+
+                    [Name("GlobalCode"), NamedColumn("GlobalCode")] //
+                    public UILabel GlobalCode { get; set; }
+
+                    [Name("Наименование"), NamedColumn("Наименование"), FindByXPath("./a")] //
+                    public ExtButton Name { get; set; }
+
+                    [Name("Цена c НДС"), NamedColumn("Цена c НДС")] //
+                    public UILabel Price { get; set; }
+
+                    [Name("Доп.цены с НДС"), Column(4)] //
+                    public UILabel AdditionalPrices { get; set; }
+
+                    [Name("Ед. измерения / Период"), Column(5)] //
+                    public UILabel MetricUnit { get; set; }
+
+                    [Name("Счетчики"), Column(6)] //
+                    public UILabel Counters { get; set; }
+
+                    [Name("Пакеты"), Column(8), ItemByXPath("./span")] //
+                    public UIList<UILabel> Packages { get; set; }
+                }
+
+                [Name("Блок полей 'Прайс-лист РТП'")]
+                public AddPriceListBlock AddPriceList { get; set; }
+                public class AddPriceListBlock : UIComponent
+                {
+                    [Name("Ключевые слова для поиска"), FindByXPath("//input[@id='PricelistAddServiceProductName']")]
+                    public UIEdit<string> FindServiceEdit { get; set; }
+
+                    [Name("Тип услуги"), FindByXPath("//edit-enum[@id='PricelistAddServiceModalSrvClass']/select")]
+                    public UISelectBox ServiceTypeSelectBox { get; set; }
+
+                    [Name("Поиск"), FindByXPath("//button[@id='PricelistAddServiceSearchButton']")]
+                    public ExtButton FindButton { get; set; }
+
+                    [Name("Найденные услуги"), FindByXPath("//table[@id='PricelistAddServiceFoundTable']")]
+                    [HeaderByXPath("./tbody/tr")]
+                    [HeaderCellByXPath("./th")]
+                    [RowByXPath("./tbody/tr[td]")]
+                    public UITable<PriceListDataRow> FindedServicesTable { get; set; }
+
+                    [Name("Прайс-лист"), RowCellByXPath("./td")]
+                    public class PriceListDataRow : UITableRow
+                    {
+                        [Name("GlobalCode"), Column(0)] //
+                        public UILabel GlobalCode { get; set; }
+
+                        [Name("Наименование"), Column(1)] //
+                        public UILabel Name { get; set; }
+                    }
+
+                    [Name("OK"), FindByXPath("//button[@id='PricelistAddServiceModalOkButton']")]
+                    public ExtButton OkButton { get; set; }
+
+                    [Name("Отменить"), FindByXPath("//button[@id='PricelistAddServiceModalCancelButton']")]
+                    public ExtButton CancelButton { get; set; }
+                    /////TODO
+                    ///Продолжить отсюда формочку
+                }
+            }
+
+        }
+    }
+
+}
