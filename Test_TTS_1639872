@@ -1,0 +1,589 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using Sunkey.UI.TTS;
+using Sunkey.UI.TTS.WebForm;
+using Sunkey.Base.Core.Common;
+using System.Linq;
+using Sunkey.Base.Core;
+using Sunkey.Autotests.TTS;
+using System.Text;
+using OpenQA.Selenium;
+using Sunkey.UI.TTS.WebForm.Pages;
+using Sunkey.UI.TTS.WebForm.Forms;
+using System.Threading;
+using Sunkey.Autotests.TTS.BL;
+using SunkeyAutotests.TTS.BL;
+using Sunkey.UI.Ext.Contol;
+using Sunkey.Framework.Core;
+using Sunkey.Base.Core.Asserts;
+using Autotests.TTS.BL;
+using Sunkey.Tools.DataOperations.Components;
+using MimeKit;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+
+namespace Autotests.TTS.Tests.WebForm
+{
+    [TestClass]
+    public class TTS_1639872 : TestBase
+    {
+        public TtsApp Tts { get; set; }
+        public MainPage MainPage { get; set; }
+        public OrdersPage OrdersPage { get; set; }
+        public CreateOrderForm CreateOrderForm { get; set; }
+        public GroupOperationsPage GroupOperationsPage { get; set; }
+        public MarketingTariffPlansPage MTPPage { get; set; }
+        public FileHelper FileHelper { get; set; }
+        public EmailHelper EmailHelper { get; set; }
+        public MarketingServicesPage MPSPage { get; set; }
+        public GroupEditPage GroupEditPage { get; set; }
+        public EditTariffPlanForm EditTPForm { get; set; }
+        public string orderName;
+        public string tariffName;
+        public OrdersBL OrdersBL { get; set; }
+        public TariffPlanBL TariffPlanBL { get; set; }
+        public ServicesBL ServicesBL { get; set; }
+
+
+        public OrderData OrderData = new OrderData()
+        {
+            Market = "B2B Мобильный",
+            Direction = "Data",
+            OrderType = "Новый тарифный план"
+        };
+        public ServiceData Service1 = new ServiceData()
+        {
+            PeriodPrice = "100",
+            MetricUnit = "Месяц"
+
+        };
+        public ServiceData Service2 = new ServiceData()
+        {
+            PeriodPrice = "100",
+            MetricUnit = "Месяц"
+
+        };
+        public TariffPlan TP1 = new TariffPlan()
+        {
+            AddRegion = true,
+            RegionRTP = "Москва"
+        };
+        public TariffPlan TP2 = new TariffPlan()
+        {
+            AddRegion = true,
+            RegionRTP = "Москва"
+        };
+
+        public string rtp1;
+        public string region1 = "Москва";
+        public string rtp2;
+        public string region2 = "Краснодар";
+        public string result;
+
+
+        [TestCategory("1639872"),
+        WorkItem(1639872),
+        Description("[TTS][ГР] Добавление услуг на РТП с одинаковыми параметрами")]
+        [TestMethod]
+        public void Run_TTS_1639872()
+        {
+            try
+            {
+                Step.Info("Шаги 1-9. Запуск TTS. Создание приказа, МТП, МПУ", () =>
+                {
+                    Tts.Load();
+                    OrderData = OrdersBL.CreateNewOrder(OrderData);
+                    Log.Info("Создан новый приказ: " + OrderData.ShortOrderName);
+                    OrdersBL.CheckOrderStatus("Черновик");
+                    TP1 = TariffPlanBL.CreateTariffPlan(OrderData.ShortOrderName, TP1);
+
+                    TariffPlanBL.CheckNewTPVersion(TP1, OrderData.ShortOrderName);
+                    EditTPForm.VersionInfoTab.VersionsTable.Rows.First(x => x.Name.Text.Contains(TP1.VersionName)).Name.Click();
+                    EditTPForm.MTPVersion.EditVersionButton.Wait().Timeout(TimeSpan.FromSeconds(60)).OnSuccess(x => x.Click()).Until();
+                    TP1.RTPNames.Add(EditTPForm.MTPVersion.RTPTable.Rows.First().Name.Text);
+                    TP1.RegionRTP = region2;
+                    TariffPlanBL.AddRegion(TP1);
+                    EditTPForm.MTPVersion.SaveButton.Click();
+                    TP1.RTPNames.Add(EditTPForm.MTPVersion.RTPTable.Rows.Last().Name.Text);
+                    Log.Info($"Добавлены РТП1 '{TP1.RTPNames[0]}' и РТП2 '{TP1.RTPNames[1]}'.");
+                    TP2 = TariffPlanBL.CreateTariffPlan(OrderData.ShortOrderName, TP2);
+                    TariffPlanBL.CheckNewTPVersion(TP2, OrderData.ShortOrderName);
+                    EditTPForm.VersionInfoTab.VersionsTable.Rows.First(x => x.Name.Text.Contains(TP2.VersionName)).Name.Click();
+                    EditTPForm.MTPVersion.EditVersionButton.Wait().Timeout(TimeSpan.FromSeconds(60)).OnSuccess(x => x.Click()).Until();
+                    TP2.RTPNames.Add(EditTPForm.MTPVersion.RTPTable.Rows.First().Name.Text);
+                    TP2.RegionRTP = region2;
+                    TariffPlanBL.AddRegion(TP2);
+                    EditTPForm.MTPVersion.SaveButton.Click();
+                    TP2.RTPNames.Add(EditTPForm.MTPVersion.RTPTable.Rows.Last().Name.Text);
+                    Log.Info($"Добавлены РТП1 '{TP1.RTPNames[0]}' и РТП2 '{TP1.RTPNames[1]}'.");
+
+                    ServicesBL.OpenServicePage();
+                    Service1 = ServicesBL.CreateService(OrderData.ShortOrderName, Service1);
+
+                    MPSPage.Product.ServiceVersion.ProductVersioPriceListButton.Click();
+
+                    Assert.VerifyCondition<БАГ_FORIS>(() => !MPSPage.Product.ServiceVersion.PriceList.PriceListTable.Displayed,
+                        "Информация отображена корректно.",
+                        "Информация отображена некорректно.",
+                        MPSPage.Product.ServiceVersion.PriceList.PriceListTable.MakeScreenshot());
+
+                    ServicesBL.OpenServicePage();
+                    Thread.Sleep(5 * 1000);
+                    Service2 = ServicesBL.CreateService(OrderData.ShortOrderName, Service2);
+                    Thread.Sleep(5 * 1000);
+                    MPSPage.Product.ServiceVersion.ProductVersioPriceListButton.Click();
+                    Assert.VerifyCondition<БАГ_FORIS>(() => !MPSPage.Product.ServiceVersion.PriceList.PriceListTable.Displayed,
+                       "Информация отображена корректно.",
+                       "Информация отображена некорректно.",
+                       MPSPage.Product.ServiceVersion.PriceList.PriceListTable.MakeScreenshot());
+
+                    ServicesBL.OpenServicePage();
+
+                    Log.Info($"Создан приказ '{OrderData.ShortOrderName}' с МТП '{TP1.TariffName}', периодической МПУ '{Service1.ServiceName}', " +
+                        $"разовой МПУ '{Service2.ServiceName}'.");
+                });
+                Step.Info("Шаг 10-13.ОТкрытие позиции прайс-листа", () =>
+                {
+                    MainPage.Header.FindOrderButton.Click();
+                    MainPage.Header.FindOrderEdit.Set(OrderData.ShortOrderName);
+                    MainPage.Header.FindOrderEdit.SendKeys(Keys.Enter);
+
+                    MainPage.Header.MainDropDownMenu.Click();
+                    MainPage.Header.MainMenu.GroupEditButton.Click();
+                    MainPage.Header.MainMenu.GroupEdit.PriceListPosition.Click();
+                    Thread.Sleep(1);
+                });
+                Step.Info("Шаги 14-16. Проверка услуг", () =>
+                {
+                   
+                    if (!GroupEditPage.GroupEditPanel.ChooseServices.IntermediateListChechBox.Selected)
+                    {
+                        GroupEditPage.GroupEditPanel.ChooseServices.IntermediateListChechBox.Set(true);
+                    }
+                    GroupEditPage.GroupEditPanel.ChooseServices.SearchFilterEdit.Set(Service1.ServiceName);
+                    GroupEditPage.GroupEditPanel.ChooseServices.FindButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseServices.GroupEditServiceFilteredList.FindAndClickElement($"//a[contains(., '{Service1.ServiceName}')]");
+                    GroupEditPage.GroupEditPanel.ChooseServices.ChooseButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseServices.ChooseButtonAddService.Click();
+
+                    GroupEditPage.GroupEditPanel.ChooseServices.SearchFilterEdit.Clear();
+                    GroupEditPage.GroupEditPanel.ChooseServices.SearchFilterEdit.Set(Service2.ServiceName);
+                    GroupEditPage.GroupEditPanel.ChooseServices.FindButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseServices.GroupEditServiceFilteredList.FindAndClickElement($"//a[contains(., '{Service2.ServiceName}')]");
+                    GroupEditPage.GroupEditPanel.ChooseServices.ChooseButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseServices.ChooseButtonAddService.Click();
+
+                   
+                    GroupEditPage.GroupEditPanel.GroupEditFooterPanel.NextButton.Click();
+
+                });
+
+                Step.Info("Шаги 17-21. Добавление РТП", () =>
+                {
+                    if (!GroupEditPage.GroupEditPanel.ChooseTariffPlans.OnlyActiveCheckBox.Selected)
+                    {
+                        GroupEditPage.GroupEditPanel.ChooseTariffPlans.OnlyActiveCheckBox.Set(true);
+                    }
+                    if (!GroupEditPage.GroupEditPanel.ChooseTariffPlans.OnlySaleCheckBox.Selected)
+                    {
+                        GroupEditPage.GroupEditPanel.ChooseTariffPlans.OnlySaleCheckBox.Set(true);
+                    }
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilter.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilterInput.Set(TP1.GlobalCode);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilterInput.SendKeys(Keys.Enter);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilter.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilterInput.Set(TP1.VersionName);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilterInput.SendKeys(Keys.Enter);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.IntermediateListCheckBox.Set(true);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.FindButton.Click();
+                    //Thread.Sleep(30 * 1000);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.SelectingButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.SelectAllButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilter.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilterInput.Set(TP2.GlobalCode);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffFilterInput.SendKeys(Keys.Enter);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilter.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilterInput.Set(TP2.VersionName);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.GroupEditTariffVersionFilterInput.SendKeys(Keys.Enter);
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.FindButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.SelectingButton.Click();
+                    GroupEditPage.GroupEditPanel.ChooseTariffPlans.SelectAllButton.Click();
+
+                    GroupEditPage.GroupEditPanel.NextButton.Click();
+
+                    GroupEditPage.GroupEditPanel.PriceListFilterParameters.ParametersList.ScrollToElement();
+                    GroupEditPage.GroupEditPanel.PriceListFilterParameters.ParametersList.Items.First(x => x.Text.Contains("Раздел прайс-листа")).Click();
+                    GroupEditPage.GroupEditPanel.PriceListFilterParameters.ParametersList.Items.First(x => x.Text.Contains("Статус услуги")).Click();
+                    GroupEditPage.GroupEditPanel.PriceListFilterParameters.AddButton.Click();
+
+                    GroupEditPage.GroupEditPanel.NextButton.Click();
+                    GroupEditPage.GroupEditPanel.EditPriseListButton.Click();
+
+
+
+                });
+                Step.Info("Шаги 22- Редактирование выполнения изменений", () =>
+                {
+
+                    GroupEditPage.GroupEditPanel.PriseListPositionTableRow.ScrollToElement();
+
+                    int c = 1;
+
+                    foreach (var r in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Rows)
+                    {
+
+
+                        if (c % 2 != 0)
+                        {
+
+                            foreach (var i in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Columns.Skip(3))
+                            {
+
+
+
+                                if (r.FindElements(By.TagName("td")).ElementAt(i.Index).GetCssValue("background-color").Equals("rgba(211, 211, 211, 1)"))
+
+                                    Log.Info(i.Index + " " + i.Name, r.MakeScreenshot(r.FindElement()));
+                                else
+                                    throw new БАГ_FORIS("Ячейки на пересечении параметров и РТП доступны для заполнения и  не подсвечены серым цветом",
+                                        r.MakeScreenshot(r.FindElements(By.TagName("td")).ElementAt(i.Index)));
+
+                            }
+                        }
+                        else
+                        {
+                            foreach (var i in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Columns.Skip(3))
+                            {
+                                if (r.FindElements(By.TagName("td")).ElementAt(i.Index - 1).GetCssValue("background-color").Equals("rgba(211, 211, 211, 1)"))
+
+                                    Log.Info((i.Index - 1) + " " + i.Name, r.MakeScreenshot(r.FindElement()));
+                                else
+                                    throw new БАГ_FORIS("Ячейки на пересечении параметров и РТП доступны для заполнения и  не подсвечены серым цветом",
+                                        r.MakeScreenshot(r.FindElements(By.TagName("td")).ElementAt(i.Index - 1)));
+
+                            }
+                        }
+                        c++;
+                    }
+
+
+                    if (GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Rows.First().ForAllSelectBox.Enabled())
+                    {
+                        Log.Info("Ячейки столбца Для всех доступны для заполнения.", GroupEditPage.GroupEditPanel.PriseListPositionTableRow.MakeScreenshot());
+                    }
+
+                    if (GroupEditPage.GroupEditPanel.SaveButton.Enabled() && GroupEditPage.GroupEditPanel.CancelButton.Enabled())
+                    {
+                        Log.Info("Присутствуют активные кнопки «Сохранить» и «Отменить»", GroupEditPage.GroupEditPanel.PriseListPositionTableRow.MakeScreenshot());
+
+                    }
+
+
+                });
+
+                List<(string RTP, string Service, string Param, string Value)> List = new List<(string RTP, string Service, string Param, string Value)>();
+                Step.Info("Шаг 23. Приказ", () =>
+                {
+                    Step.Info("Очистить поле приказ", () =>
+                    {
+                        MainPage.Header.ClearOrderButton.Click();
+
+                        ProgressBar.Waiting(() => Assert.VerifyCondition<БАГ_FORIS>(() => (GroupEditPage.GroupEditPanel.SaveButton.Displayed
+                          && !GroupEditPage.GroupEditPanel.SaveButton.Enabled()), "Приказ удален и кнопка Сохранить неактивна", "Приказ удален и кнопка Сохранить активна"));
+
+                    });
+
+
+                    Step.Info("Выбрать приказ повторно и заполнить параметры таблицы", () =>
+                    {
+                        MainPage.Header.FindOrderButton.Click();
+                        MainPage.Header.FindOrderEdit.Set(OrderData.ShortOrderName);
+                        MainPage.Header.FindOrderEdit.SendKeys(Keys.Enter);
+                        int c = 1;
+                        foreach (var r in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Rows)
+                        {
+                            if (c % 2 != 0)
+                            {
+                                r.ForAllSelectBox.Click();
+                                r.ForAllSelectBox.FindAndClickElement("//div[text()='SMS и MMS']");
+
+                            }
+                            else
+                            {
+                                r.Parametr.Click();
+                                r.Parametr.FindAndClickElement("//option[text()='Активна']");
+                            }
+                            c++;
+                        }
+
+                        int g = 1;
+                        string Service = "";
+
+                        foreach (var r in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Rows)
+                        {
+
+
+                            if (g % 2 != 0)
+                            {
+                                string Param = r.Parametr.Text;
+                                Service = r.ServiceName.Text; //*
+                                string Value = r.ForAllSelectBox.Text;
+                                foreach (var i in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Columns.Skip(3))
+                                {
+
+                                    List.Add((i.Name, Service, Param, Value));
+                                    Log.Info(List.LastOrDefault().RTP + " : " + List.LastOrDefault().Service + "    " + List.LastOrDefault().Param + " = " + List.LastOrDefault().Value);
+
+                                }
+                            }
+                            else
+                            {
+                                string Value = "Активная";
+                                string Param = r.ServiceName.Text;
+                                foreach (var i in GroupEditPage.GroupEditPanel.PriseListPositionTableRow.Columns.Skip(3))
+                                {
+                                    List.Add((i.Name, Service, Param, Value));
+                                    Log.Info(List.LastOrDefault().RTP + " : " + List.LastOrDefault().Service + "    " + List.LastOrDefault().Param + " = " + List.LastOrDefault().Value);
+
+                                }
+                            }
+                            g++;
+                            Service = r.ServiceName.Text;
+                        }
+                        GroupEditPage.GroupEditPanel.SaveButton.Click();
+                        if (GroupEditPage.InfoTplDialog.Displayed && GroupEditPage.InfoTplDialog.InfoText.Text.Contains("Заявка успешно зарегистрирована под номером"))
+                        {
+
+                            Log.Info(GroupEditPage.InfoTplDialog.InfoText.Text, GroupEditPage.InfoTplDialog.InfoText.MakeScreenshot());
+                            Thread.Sleep(70 * 1000);
+
+                            string a = GroupEditPage.InfoTplDialog.InfoText.Text;
+                            int value;
+                            int.TryParse(string.Join("", a.Where(m => char.IsDigit(m))), out value);
+
+
+                            GroupEditPage.InfoTplDialog.OKButton.Click();
+                             MainPage.Header.SettingsDropDownMenu.Click();
+                            MainPage.Header.SettingsMenu.GroupOperations.Click();
+
+                            
+                            var row_group = GroupOperationsPage.GroupOperationsTable.Rows.FirstOrDefault(x => x.Number.Text.Contains(value.ToString()));
+                            row_group.GoToOperationButton.Click();
+
+                        }
+                        else
+                            throw new БАГ_FORIS($@"Окно 'Результат операции' не отобразилось или произошла ошибка! \n
+                        {GroupEditPage.InfoTplDialog.InfoText.Text}");
+
+
+
+                    });
+
+
+                });
+
+                Step.Info("Шаг 27. Проверка почты", () =>
+                {
+                    MimeMessage message = null;
+                    int countFindMailAttempt = 0;
+
+                    while (++countFindMailAttempt <= 20)
+                    {
+
+                        Log.Info("Ждём 30 секунд пока придёт письмо о результатах групповой операции");
+
+                        foreach (var item in EmailHelper.GetEmailMessagesFromMgtwServer())
+                        {
+                            if (item.HtmlBody.Contains("Групповая операция"))
+                            {
+                                message = item;
+
+                                break;
+                            }
+
+
+
+                            Log.Debug("Текст письма: " + Environment.NewLine + item.HtmlBody);
+
+                        }
+
+                        if (message != null)
+                            break;
+                    }
+
+                    message = message ?? throw new БАГ_FORIS("Не удалось получить письмо");
+
+                    Log.Info("Текст письма: " + Environment.NewLine + message.HtmlBody);
+
+                });
+
+
+                Step.Info("Шаг 28. Проверка документа", () =>
+                {
+                    Assert.VerifyCondition<БАГ_FORIS>(() => GroupOperationsPage.OperationStatus.Text.Equals("Выполнен"),
+                         "Статус групповой операции 'Выполнен'.",
+                         "Статус групповой операции отличается от 'Выполнен'!");
+
+                    var r = GroupOperationsPage.JobContentTable.Rows;
+                    foreach (var item in List)
+                    {
+                        Assert.VerifyCondition<БАГ_FORIS>(() => r.First(x => x.Name.Text.Contains(item.RTP) && x.Service.Text.Equals(item.Service) && x.Parameter.Text.Equals(item.Param) && x.Value.Text.Equals(item.Value))?.Displayed ?? false,
+                        $"Заданный ранее параметр '{item.Param}' для РТП '{item.RTP}' для услуи '{item.Service}' + значение '{item.Value}' корректно отображается в содержании работ.",
+                        "Содержание работ некорректно!");
+                    }
+                    Log.Info("Сождержание работ", GroupOperationsPage.JobContentTable.MakeScreenshot(GroupOperationsPage.JobContentTable.FindElement()));
+
+
+
+                });
+
+
+                Step.Info("Шаги 29-32. Подписание приказа", () =>
+                {
+                    MainPage.Header.GoToOrderButton.Click();
+                    OrdersPage.Order.OdredContentButton.Click();
+
+                    if (OrdersPage.Order.OrderContent.TariffPlanTab.LaunchedTPList.Displayed)
+                    {
+                        Log.Info("На вкладке 'Тарифные планы' есть раздел 'Изменяемые тарифные планы'", OrdersPage.Order.OrderContent.TariffPlanTab.LaunchedTPList.MakeScreenshot());
+
+                    }
+                    else
+                        throw new БАГ_FORIS("На вкладке 'Тарифные планы' отсутствует раздел 'Изменяемые тарифные планы'", OrdersPage.Order.OrderContent.MakeScreenshot());
+
+                    OrdersBL.SignOrder();
+
+                });
+
+
+
+                Step.Info("Шаги 33-39. Проверка отображения параметров на РПТ1 и РТП2", () =>
+                {
+
+                    List<(string Name, string Version, string Code)> TarrifPlans = new List<(string Name, string Version, string Code)>();
+                    TarrifPlans.Add((TP1.TariffName, TP1.VersionName, TP1.GlobalCode));
+                    TarrifPlans.Add((TP2.TariffName, TP2.VersionName, TP2.GlobalCode));
+                    
+
+                    foreach (var tp in TarrifPlans)
+                    {
+                        MainPage.Header.GoToOrderButton.Click();
+                        OrdersPage.Order.OdredContentButton.Click();
+                        OrdersPage.Order.OrderContent.TariffPlanTab.LaunchedTPList.FindAndClickElement($"//*[text()='{tp.Name}']");
+                        if (OrdersPage.Order.OrderContent.TariffPlanTab.TariffParamsList.Items.Count() > 0 &&
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.Items.FirstOrDefault(x => x.Text.Contains(tp.Version)).Displayed)
+                        {
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//a[contains(text(), '{tp.Version}')]");
+                            string rtp = region1 + " / " + tp.Code;
+
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//a[contains(text(), '{rtp}')]");
+                            OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.ScrollToElement();
+                            var row = OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.Rows.FirstOrDefault(x => x.ServiceName.Text.Equals(Service1.ServiceName));
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (row.ServiceName.Text.Equals(Service1.ServiceName)),
+                                "Появилась таблица, где указана МПУ1",
+                                "Информация отображена некорректно!",
+                                row.MakeScreenshot(row.FindElement()));
+                            Log.Info("Информация с указанием параметров МПУ корректна.");
+
+
+                            var row2 = OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.Rows.FirstOrDefault(x => x.ServiceName.Text.Equals(Service2.ServiceName));
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (row2.ServiceName.Text.Equals(Service2.ServiceName)),
+                                "Появилась таблица, где указана МПУ2",
+                                "Информация отображена некорректно!",
+                                row2.MakeScreenshot(row2.FindElement()));
+                            Log.Info("Информация с указанием параметров МПУ корректна.");
+
+                            string TarPlan = region1 + " - " + tp.Name;
+
+
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//div[div[a[contains(text(), '{region1}')]]]//a[@ng-click='pricelist(rtp)']");
+                            Thread.Sleep(2 * 1000);
+                            EditTPForm.RTPCard.RTPPriceList.ExtendedFilterButton.Click();
+                            if (EditTPForm.RTPCard.RTPPriceList.ExtendedFilterShownCheckBox.Selected)
+                                EditTPForm.RTPCard.RTPPriceList.ExtendedFilterShownCheckBox.Set(false);
+                            EditTPForm.RTPCard.RTPPriceList.ExtendedFilterApplyButton.Click();
+                            EditTPForm.RTPCard.RTPPriceList.PriceListTable.FindAndClickElement(".//a[text()='SMS и MMS']");
+                            Thread.Sleep(2 * 1000);
+                            var first_service = EditTPForm.RTPCard.RTPPriceList.PriceListTable.Rows.Where(x => x.Name.Text.Contains(Service1.ServiceName)).FirstOrDefault();
+                            first_service.Name.Click();
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MainSectionLabel.Text.Contains("SMS") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceNameLabel.Text.Equals(Service1.ServiceName)
+                            && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceStatusSelectBox.Text.Contains("Активна") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.TarrifPlanLabel.Text.Equals(TarPlan)),
+                                "Параметры отображаются корректно",
+                                "Параметры отображаются некорректно", MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MakeScreenshot());
+                            MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.PriceListPositionCancelButton.Click();
+
+
+                            var second_service = EditTPForm.RTPCard.RTPPriceList.PriceListTable.Rows.Where(x => x.Name.Text.Contains(Service2.ServiceName)).FirstOrDefault();
+                            second_service.Name.Click();
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MainSectionLabel.Text.Contains("SMS") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceNameLabel.Text.Equals(Service2.ServiceName)
+                           && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceStatusSelectBox.Text.Contains("Активна") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.TarrifPlanLabel.Text.Equals(TarPlan)),
+                               "Параметры отображаются корректно",
+                               "Параметры отображаются некорректно", MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MakeScreenshot());
+                            MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.PriceListPositionCancelButton.Click();
+
+
+                            MainPage.Header.GoToOrderButton.Click();
+                            OrdersPage.Order.OdredContentButton.Click();
+                            OrdersPage.Order.OrderContent.TariffPlanTab.LaunchedTPList.FindAndClickElement($"//*[text()='{tp.Name}']");
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//a[contains(text(), '{tp.Version}')]");
+
+
+                            string rtp2 = region2 + " / " + tp.Code;
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//a[contains(text(), '{rtp2}')]");
+                            OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.ScrollToElement();
+                            var row3 = OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.Rows.FirstOrDefault(x => x.ServiceName.Text.Equals(Service1.ServiceName));
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (row3.ServiceName.Text.Equals(Service1.ServiceName)),
+                                "Появилась таблица, где указана МПУ1",
+                                "Информация отображена некорректно!",
+                                row3.MakeScreenshot(row3.FindElement()));
+                            Log.Info("Информация с указанием параметров МПУ корректна.");
+
+
+                            var row4 = OrdersPage.Order.OrderContent.TariffPlanTab.RTPTable.Rows.FirstOrDefault(x => x.ServiceName.Text.Equals(Service2.ServiceName));
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (row4.ServiceName.Text.Equals(Service2.ServiceName)),
+                                "Появилась таблица, где указана МПУ2",
+                                "Информация отображена некорректно!",
+                                row4.MakeScreenshot(row4.FindElement()));
+                            Log.Info("Информация с указанием параметров МПУ корректна.");
+
+                            string TarPlan2 = region2 + " - " + tp.Name;
+
+                            OrdersPage.Order.OrderContent.TariffPlanTab.TariffVersionsList.FindAndClickElement($"//div[div[a[contains(text(), '{region2}')]]]//a[@ng-click='pricelist(rtp)']");
+                            Thread.Sleep(2 * 1000);
+                            EditTPForm.RTPCard.RTPPriceList.ExtendedFilterButton.Click();
+                            if (EditTPForm.RTPCard.RTPPriceList.ExtendedFilterShownCheckBox.Selected)
+                                EditTPForm.RTPCard.RTPPriceList.ExtendedFilterShownCheckBox.Set(false);
+                            EditTPForm.RTPCard.RTPPriceList.ExtendedFilterApplyButton.Click();
+                            EditTPForm.RTPCard.RTPPriceList.PriceListTable.FindAndClickElement(".//a[text()='SMS и MMS']");
+                            Thread.Sleep(2 * 1000);
+                            var first_service_rtp2 = EditTPForm.RTPCard.RTPPriceList.PriceListTable.Rows.Where(x => x.Name.Text.Contains(Service1.ServiceName)).FirstOrDefault();
+                            first_service_rtp2.Name.Click();
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MainSectionLabel.Text.Contains("SMS") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceNameLabel.Text.Equals(Service1.ServiceName)
+                            && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceStatusSelectBox.Text.Contains("Активна") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.TarrifPlanLabel.Text.Equals(TarPlan2)),
+                                "Параметры отображаются корректно",
+                                "Параметры отображаются некорректно", MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MakeScreenshot());
+                            MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.PriceListPositionCancelButton.Click();
+
+
+                            var second_service_rtp2 = EditTPForm.RTPCard.RTPPriceList.PriceListTable.Rows.Where(x => x.Name.Text.Contains(Service2.ServiceName)).FirstOrDefault();
+                            second_service_rtp2.Name.Click();
+                            Assert.VerifyCondition<БАГ_FORIS>(() => (MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MainSectionLabel.Text.Contains("SMS") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceNameLabel.Text.Equals(Service2.ServiceName)
+                           && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.ServiceStatusSelectBox.Text.Contains("Активна") && MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.TarrifPlanLabel.Text.Equals(TarPlan2)),
+                               "Параметры отображаются корректно",
+                               "Параметры отображаются некорректно", MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.MakeScreenshot());
+                            MPSPage.Product.ServiceVersion.PriceList.PriceListPosition.PriceListPositionCancelButton.Click();
+                        }
+                    }
+
+
+                });
+                Tts.Close();
+
+            }
+            catch (Exception ex)
+            {
+                TestFailed.TestIsFailed(ex);
+            }
+        }
+    }
+}
