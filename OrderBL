@@ -1,0 +1,262 @@
+using OpenQA.Selenium;
+using Sunkey.Base.Core;
+using Sunkey.Framework.Core;
+using Sunkey.Framework.UI;
+using Sunkey.UI.Ext.Contol;
+using Sunkey.UI.TTS;
+using Sunkey.UI.TTS.WebForm.Forms;
+using Sunkey.UI.TTS.WebForm.Pages;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Sunkey.Autotests.TTS.BL
+{
+    public class OrderData
+    {
+        public string OrderNumber { get; set; }
+        public string DateOfSigning { get; set; } = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        public string ShortOrderName { get; set; }
+        public string FullOrderName { get; set; }
+        public string OrderExtID { get; set; }
+        public string DateOrderPDplan { get; set; } = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        public string DateOrderPDfact { get; set; } = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        public string DateOrderGarantee { get; set; } = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        public string DateCocatCreated { get; set; } = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        public string Market { get; set; }
+        public string OrderType { get; set; }
+        public string Direction { get; set; }
+        public string BossReferentUrl { get; set; }
+        public string OrderDescription { get; set; }
+    }
+    public class OrdersBL : Component
+    {
+        public TtsApp Tts { get; set; }
+        public OrdersPage OrdersPage { get; set; }
+        public CreateOrderForm CreateOrderForm { get; set; }
+        public MainPage MainPage { get; set; }
+        public CommonBL CommonBL { get; set; }
+
+        public void OpenOrdersPage()
+        {
+            MainPage.Header.MainDropDownMenu.Click();
+            MainPage.Header.MainMenu.Orders.Click();
+            //Thread.Sleep(10 * 1000);
+        }
+
+        public OrderData CreateNewOrder(OrderData OrderData)
+        {
+            OpenOrdersPage();
+            OrdersPage.AddOrderButton.Click();
+            CreateOrderForm.OrderNumber.Set(CommonBL.RandomNumberString(11));
+            OrderData.OrderNumber = CreateOrderForm.OrderNumber.Value;
+            CreateOrderForm.DateOfSigning.Set(OrderData.DateOfSigning);
+            //OrderData.DateOfSigning = CreateOrderForm.DateOfSigning.Value;
+            CreateOrderForm.ShortOrderName.Set("Autotest" + CreateOrderForm.OrderNumber.Value);
+            OrderData.ShortOrderName = CreateOrderForm.ShortOrderName.Value;
+            CreateOrderForm.FullOrderName.Set("Autotest" + CreateOrderForm.OrderNumber.Value);
+            OrderData.FullOrderName = CreateOrderForm.FullOrderName.Value;
+            CreateOrderForm.OrderExtID.Set(CommonBL.RandomNumberString(9));
+            OrderData.OrderExtID = CreateOrderForm.OrderExtID.Value;
+            CreateOrderForm.DateOrderPDplan.Set(OrderData.DateOrderPDplan);
+            //OrderData.DateOrderPDplan = CreateOrderForm.DateOrderPDplan.Value;
+            CreateOrderForm.DateOrderPDfact.Set(OrderData.DateOrderPDfact);
+            //OrderData.DateOrderPDfact = CreateOrderForm.DateOrderPDfact.Value;
+            CreateOrderForm.DateOrderGarantee.Set(OrderData.DateOrderGarantee);
+            //OrderData.DateOrderGarantee = CreateOrderForm.DateOrderGarantee.Value;
+            CreateOrderForm.DateCocatCreated.Set(OrderData.DateCocatCreated);
+            //OrderData.DateCocatCreated = CreateOrderForm.DateCocatCreated.Value;
+            CreateOrderForm.MarketSelectBox.Click();
+            CreateOrderForm.MarketSelectBox.FindAndClickElement($"//div[text()='{OrderData.Market}']");
+            CreateOrderForm.OrderTypeSelectBox.Click();
+            CreateOrderForm.OrderTypeSelectBox.FindAndClickElement($"//option[text()='{OrderData.OrderType}']");
+            CreateOrderForm.DirectionSelectBox.Click();
+            CreateOrderForm.DirectionSelectBox.FindAndClickElement($"//div[text()='{OrderData.Direction}']");
+            CreateOrderForm.BossReferentUrl.Set("AutotestURL" + CommonBL.RandomCharString(5));
+            OrderData.BossReferentUrl = CreateOrderForm.BossReferentUrl.Value;
+            CreateOrderForm.OrderDescription.Set("Autotest" + CreateOrderForm.OrderNumber.Value);
+            OrderData.OrderDescription = CreateOrderForm.OrderDescription.Value;
+            CreateOrderForm.OkButton.Click();
+            return OrderData;
+        }
+        public void CheckOrderStatus(string Status)
+        {
+            if (OrdersPage.Order.OrderStatus.Text.Contains(Status))
+                Log.Info($"Приказ находится в ожидаемом статусе '{OrdersPage.Order.OrderStatus.Text}'.");
+            else
+                throw new БАГ_FORIS($"Статус приказа '{OrdersPage.Order.OrderStatus.Text}' отличается от ожидаемого '{Status}'!");
+        }
+
+        public void GoToOrder(string ShortOrderName)
+        {
+            MainPage.Header.FindOrderButton.Click();
+            MainPage.Header.FindOrderEdit.Set(ShortOrderName);
+            MainPage.Header.FindOrderEdit.SendKeys(Keys.Enter);
+            Thread.Sleep(20 * 1000);
+            MainPage.Header.GoToOrderButton.Click();
+            //Thread.Sleep(5 * 1000);
+        }
+
+        public void SignOrder()
+        {
+            if (!OrdersPage.Order.ToAgreeButton.Enabled())
+            {
+                foreach (var item in OrdersPage.Order.AlertList.Items)
+                    Log.Info($"Обнаружена ошибка {item.Text}");
+                throw new Exception("Обнаружены ошибки, приказ не может быть согласован или подписан!");
+            }
+            OrderToAgree();
+            OrderToSign();
+            if (OrdersPage.Order.OrderStatus.Value.Equals("Подписан"))
+                Log.Info("Статус приказа 'Подписан'");
+            else
+                throw new БАГ_FORIS($"Статус приказа '{OrdersPage.Order.OrderStatus.Value}' отличается от ожидаемого 'Подписан'!");
+        }
+
+        /// <summary>
+        /// Выбирает указанный статус в расширенном фильтре поиска приказа
+        /// </summary>
+        /// <param name="statusName"></param>
+        public void AdvancedFilterSelectStatus(string statusName)
+        {
+            for (int i = 0; true; i++)
+            {
+                var selectItem = OrdersPage.FindElement(By.XPath($"//div[@id=\"ui-select-choices-row-1-{i}\"]"));
+                if (selectItem.Text.Contains(statusName))
+                {
+                    selectItem.Click();
+                    break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Открывает приказ в таблице приказов
+        /// </summary>
+        /// <param name="shortOrderName"></param>
+        public void OpenOrderInSearchTable(string shortOrderName)
+        {
+            OrdersPage.OrdersTable.Rows.FirstOrDefault(x => x.ShortName.Text.Contains(shortOrderName)).ShortName.Click();
+            //var element = OrdersPage.FindElement(By.XPath($"//a[contains(text(), '{shortOrderName}')]"));
+            //element.Click();
+        }
+
+        /// <summary>
+        /// Проверяет наличие в истории приказа всех изменений статусов согласно тесту TTS_1647080
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckHistoryTable()
+        {
+            var statuses = new List<string>()
+            {
+                "Заморожено",
+                "Отправлен в отмену",
+                "Черновик",
+                "Отправлен в черновик",
+                "Отменен",
+                "Отправлен в заморозку",
+                "Черновик"
+            };
+
+            return CheckHistoryTable(statuses, statuses.Count);
+        }
+
+        /// <summary>
+        /// Проверяет наличие в истории приказа всех изменений статусов
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckHistoryTable(ICollection<string> statuses, int changesCount)
+        {
+            for (int i = 2; i < changesCount + 2; i++)
+            {
+                var histiryTableStatusElement = OrdersPage.FindElement(By.XPath($"//table[contains(@class, 'table table-bordered')]/tbody/tr[{i}]/td[9]"));
+                statuses.Remove(histiryTableStatusElement.Text.Trim());
+            }
+
+            return statuses.Count == 0;
+        }
+
+        /// <summary>
+        /// Пытается найти приказ в header поиске
+        /// </summary>
+        /// <param name="shortOrderName"></param>
+        /// <returns></returns>
+        public bool CanSearchOrder(string shortOrderName)
+        {
+            try
+            {
+                MainPage.Header.FindOrderButton.Click();
+            }
+            catch { }
+            var input = MainPage.Header.FindOrderEdit;
+            
+            input.SendKeys(shortOrderName);
+            Thread.Sleep(4 * 1000);
+            try
+            {
+                MainPage.FindElement(By.XPath("//*[@id=\"ui-select-choices-0\"]")).Click();
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public void SelectOrder(string shortOrderName)
+        {
+            // Элемент, на который нужно нажать, чтобы input стал кликабельным
+            MainPage.Header.FindOrderButton.Click();
+            MainPage.Header.FindOrderEdit.SendKeys(shortOrderName);
+            MainPage.Header.FindOrderEdit.SendKeys(Keys.Enter);
+            
+        }
+        public void OrderToAgree()
+        {
+            OrdersPage.Order.ToAgreeButton.Click();
+            if (OrdersPage.Order.ModalSigning.ModalText.Value.
+                Contains("Продолжить процедуру отправки приказа на согласование?"))
+            {
+                Log.Info(OrdersPage.Order.ModalSigning.ModalText.Value, OrdersPage.Order.ModalSigning.ModalText.MakeScreenshot());
+                OrdersPage.Order.ModalSigning.YesButton.Click();
+            }
+            Log.Info($"Статус приказа изменился на '{OrdersPage.Order.OrderStatus.Value}'", OrdersPage.Order.OrderStatus.MakeScreenshot());
+            Log.Info("Подождем...");
+            Thread.Sleep(30 * 1000);
+            OrdersPage.Order.ToAgreeButton.GetDriver().Navigate().Refresh();
+            Thread.Sleep(10 * 1000);
+            while (!OrdersPage.Order.OrderStatus.Text.Contains("На согласовании"))
+            {
+                Thread.Sleep(30 * 1000);
+                OrdersPage.Order.ToAgreeButton.GetDriver().Navigate().Refresh();
+                Thread.Sleep(10 * 1000);
+            }
+        }
+        public void OrderToSign()
+        {
+            OrdersPage.Order.ToSignedButton.Click();
+            if (OrdersPage.Order.ModalSigning.ModalText.Value.
+                Contains("Согласовать приказ?"))
+            {
+                Log.Info(OrdersPage.Order.ModalSigning.ModalText.Value, OrdersPage.Order.ModalSigning.ModalText.MakeScreenshot());
+                OrdersPage.Order.ModalSigning.YesButton.Click();
+            }
+            Log.Info($"Статус приказа изменился на '{OrdersPage.Order.OrderStatus.Value}'", OrdersPage.Order.OrderStatus.MakeScreenshot());
+            Log.Info("Подождем...");
+            Thread.Sleep(30 * 1000);
+            OrdersPage.Order.ToAgreeButton.GetDriver().Navigate().Refresh();
+            Thread.Sleep(10 * 1000);
+            while (!OrdersPage.Order.OrderStatus.Text.Contains("Подписан"))
+            {
+                Thread.Sleep(30 * 1000);
+                OrdersPage.Order.ToAgreeButton.GetDriver().Navigate().Refresh();
+                Thread.Sleep(10 * 1000);
+            }
+        }
+    }
+}
